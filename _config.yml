@@ -2,11 +2,13 @@
 title: Microblx
 email: your-email@domain.com
 description: "Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description."
-baseurl: ""
-url: "http://yourdomain.com"
+baseurl: "/cweb"
+BASE_PATH: false #http://haianos.github.io/simple_site
+production_url: http://haianos.github.io/simple_site
 # twitter_username: jekyllrb
 github_username:  haianos
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown
 permalink: pretty
+highligher: pygments
