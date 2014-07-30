@@ -17,12 +17,18 @@
         </svg>
       </a>
       <div class="trigger">
-        {% for page in site.pages %}
-          {% if page.title %}<a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>{% endif %}
+<!--         <a class="page-link" href="{{ /about/ | prepend: site.baseurl }}">{{ About }}</a> -->
+        {% assign nav_list = site.navigation %}
+        {% for page in nav_list %}
+          <a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
         {% endfor %}
+<!--        {% for page in site.pages %}
+          {% if page.group == "navigation" %}
+            {% if page.title %}<a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>{% endif %}
+          {% endif %}
+        {% endfor %}-->
       </div>
     </nav>
 
   </div>
-
 </header>
