@@ -25,7 +25,7 @@ Mailing List
 
 Pretty much all of the communication and latest updates on microblx can be found on our mailinglist. Join the community, share your experiences, post issues and discuss any topic by registering to it!
    
-  http://lists.mech.kuleuven.be/mailman/listinfo/microblx
+[Microblx Mailing List](http://lists.mech.kuleuven.be/mailman/listinfo/microblx)
 
 Support or Contact
 ------------------

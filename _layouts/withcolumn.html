@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+  {% include head.html %}
+    <body>
+
+    {% include header.html %}
+
+    <header>
+        <h1>Microblx</h1>
+        <p>testing web pages</p>
+
+        <p class="view"><a href="https://github.com/haianos/tweb">View the Project on GitHub <small>UbxTeam/microblx</small></a></p>
+        <ul>
+          <li><a href="https://github.com/UbxTeam/microblx/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/UbxTeam/microblx/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/UbxTeam/microblx">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+
+    <div class="page-content">
+      <div class="wrap">
+      {{ content }}
+      </div>
+    </div>
+
+    {% include footer.html %}
+
+    </body>
+</html>
