@@ -1,0 +1,878 @@
+<html>
+<title>Microblocks: Meta Model &mdash; Implementation </title>
+<body>
+
+<h1>Microblocks: composable port-based computations</h1>
+<h2>Meta Models, Bridges, Proxies &amp; Sub-system templates</h2>
+
+
+<hr>
+<table style="width: 100%;">
+<tr>
+ <td style="text-align: left;">
+<a href="http://people.mech.kuleuven.be/~bruyninc/">Herman Bruyninckx</a>,
+University of Leuven, Belgium; Eindhoven University of Technology, the
+Netherlands
+</td>
+<td style="text-align: right; width: 15em;">
+Last update: 8 July, 2014
+</td>
+</tr>
+<tr>
+ <td>
+Markus Klotzb&uuml;cher,
+<a href="http://www.kistler.com">Kistler AG</a>, Winterthur, Switzerland
+</br>
+Enea Scioni,
+<a href="http://endif.unife.it/it">Universit&agrave; Degli Studi di
+Ferrara</a>, Italy;
+University of Leuven, Belgium
+</br>
+Johan Philips, University of Leuven, Belgium
+ </td>
+ <td>
+ </td>
+</tr>
+</table>
+<hr>
+
+<p>
+Algorithms, computations, processes, workflows,&hellip; are some of the more common
+terms for the concept of 
+<a href="en.wikipedia.org/wiki/Function_(mathematics)">functions</a>
+that transform 
+<a href="http://en.wikipedia.org/wiki/Data_structure">data structures</a>,
+coordinated by 
+<a href="http://en.wikipedia.org/wiki/Work_flow">control flows</a>.
+This document introduces a formal specification for them,
+called the 
+&ldquo;<strong>microblocks <a href="#metamodel">meta model</a>&rdquo;</strong>.
+(This document follows the 
+<a href="http://people.mech.kuleuven.be/~bruyninc/paradigm-MDE.html">paradigm
+of Model Driven Engineering</a> (&ldquo;MDE&rdquo;), that
+provides three levels of &ldquo;models&rdquo; (<em>meta meta model</em>,
+m<em>eta model</em>, and m<em>odel</em>) and one level of &ldquo;<em>system
+realisation</em>&rdquo;, or &ldquo;implementation&rdquo;.)
+The objective of the modelling effort is (i) to help developers
+<strong>to model algorithms</strong> and their <strong>compositions</strong>,
+and (ii) <strong>to create tools</strong> that can
+<strong>reason</strong> about such models, for example to connect them
+to executable <strong>code</strong>, even under stringent 
+<strong>realtime and resource constraints</strong>.
+</p>
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em;">
+  <img src="microblock-port-trigger.png" alt="Generic microblock (cblock)" height="250px">
+ <figcaption style="padding-top: 1em;">
+<em>
+A generic model illustrating all the primitives 
+in the microblock meta model: (data) &ldquo;ports&rdquo;,
+&ldquo;triggers&rdquo;, &ldquo;configuration values&rdquo;,
+and &ldquo;metadata UIDs&rdquo;, that provide complementary ways
+to &ldquo;access&rdquo; the block's internal &ldquo;behaviour&rdquo;.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+
+<p>
+The <strong>primitives</strong> in (the <em>structural</em> part of) the
+<em>microblock</em> meta model are all shown in the Figure above. The
+aggregation of all these types of meta model primitives is called a
+&ldquo;<strong>cblock</strong>, or &ldquo;computational microblock&rdquo;.
+In (the structural part of) the meta model, these primitives are
+complemented by <strong>relationships</strong> that each connect two (or
+more) of the four types of &ldquo;<strong>ports</strong>&rdquo; in the meta
+model. Indeed, a microblock can have:
+</p>
+
+<ul>
+
+<li>
+<p>
+zero or more <strong>(data) ports</strong>, that give
+it <strong> access to data</strong> that it processes in its computations.
+</p>
+<p>
+The data structures in ports have semantic
+<strong><a href="http://en.wikipedia.org/wiki/Data_model">data
+models</a></strong>, for example formally represented in the
+<a href="http://en.wikipedia.org/wiki/Hdf5">Hierarchical Data Format</a>
+(&ldquo;HDF5&rdquo;) or in 
+<a href="http://en.wikipedia.org/wiki/Netcdf">NetCDF</a>.
+</p>
+
+</li>
+
+<li>
+<p>
+zero or more <strong>trigger (ports)</strong>: (i) <em>input</em>
+triggers that make the cblock <strong>execute functions</strong> that it
+encapsulates, and (ii) <em>output</em> triggers that allow it to 
+<strong>trigger the execution</strong> of other microblocks.
+</p>
+</li>
+
+<li>
+<p>
+zero or more <strong>configuration value (ports)</strong>, with
+which its <strong>behaviour can be adapted</strong> externally. For example, the
+&ldquo;gain&rdquo; of a 
+<a href="http://en.wikipedia.org/wiki/PID_controller">PID controller</a>
+cblock, or the size of a
+<a href="http://en.wikipedia.org/wiki/Circular_buffer">circular buffer</a>.
+</p>
+</li>
+
+<li>
+<p>
+three semantic
+<strong><a href="http://en.wikipedia.org/wiki/Unique_identifier">identifier (ports)</a></strong>
+(&ldquo;sUID&rdquo;), which are strings that serve as pointers to the
+formal model of the <strong>semantics</strong> of the microblock:
+<ul>
+<li>
+<strong>meta model UID</strong>: the identifier of the meta model, or
+<a href="http://en.wikipedia.org/wiki/Domain-specific_language">Domain-Specific
+Language</a> (&ldquo;DSL&rdquo;),
+that has been used to model the microblock.
+</li>
+<li>
+<strong>model UID</strong>: the identifier of the concrete model that
+describes the semantic meaning of the microblock, and that uses the
+above-mentioned meta model as its language.
+</li>
+<li>
+<strong>realisation UID</strong>: the identifier of this particular
+realisation of the above-mentioned model. The same model can, indeed, be
+realised multiple times, and it is necessary to be able to
+differentiate between these instances.
+</li>
+</ul>
+</p>
+</li>
+
+</ul>
+<p>
+The lines that connect ports of microblocks (see Figures below) represent
+a structural interaction <strong>relationship</strong> between the
+ports, and they <em>do not</em> imply any form of
+&ldquo;sending of data or events&rdquo; through the lines. Indeed, using
+communication for the interaction is <em>only one of the many ways</em>
+that the interaction between the blocks can be implemented in
+<em>realisations</em> of the model.
+</p>
+
+<p>
+In addition to the above-mentioned structural primitives and relationships
+of microblocks, the microblocks meta model has three 
+&ldquo;<strong>behavioural primitives</strong>&rdquo;, composed in
+different ways from the above-mentioned structural primitives:
+</p>
+<ul>
+<li>
+<p>
+<strong>cblock</strong>, that represents
+<strong>computational behaviour</strong>, i.e., functions, and that has all
+above-mentioned structural primitives.
+</br>
+Examples of cblocks are:
+a <a href="http://en.wikipedia.org/wiki/Low-pass_filter">low-pass filter</a>,
+or a
+<a href="http://en.wikipedia.org/wiki/SVD_%28mathematics%29">Singular Value
+Decomposition</a>.
+</p>
+</li>
+<li>
+<p>
+<strong>iblock</strong>, or &ldquo;<em>i<strong>nteraction block</strong></em>&rdquo;,
+that represents 
+<strong>constraints between the data involved in cblock interactions</strong>.
+Access to that data takes place through each structural data
+primitive, a &ldquo;port&rdquo;, by means of <strong>read()</strong> and
+<strong>write()</strong> functions to that part of the iblock that is
+accessible via that particular port. In addition to data ports, an iblock
+also has configuration values and semantic identifiers.
+</br>
+Examples of iblocks are: a
+<a href="http://en.wikipedia.org/wiki/Buffer_%28computer_science%29">memory buffer</a>
+or a
+<a href="http://en.wikipedia.org/wiki/Road_map">road map</a>.
+</p>
+</li>
+<li>
+<p>
+<strong>sblock</strong>, or &ldquo;<em><strong>scheduling block</strong></em>&rdquo;,
+that represents 
+<strong>constraints on the sequencing of cblock computations</strong>.
+Activation of (internal and/or external) computations is available via (one
+or more) trigger ports, by means of <strong>trigger()</strong> functions.
+In addition to trigger ports, an sblock also has configuration values and
+semantic identifiers.
+</br>
+Examples of sblocks are: a
+<a href="http://en.wikipedia.org/wiki/For_loop">for loop</a>
+and other
+<a href="http://en.wikipedia.org/wiki/iteration">iterators</a>; or
+rule-based function call scheduling.
+</p>
+</li>
+</ul>
+
+<table>
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em;">
+  <img src="microblock-sblock.png" alt="scheduling microblock (sblock)" height="150px">
+ <figcaption style="padding-top: 1em;">
+<em>
+A scheduling microblock, &ldquo;sblock&rdquo;, with &ldquo;triggers&rdquo;, 
+&ldquo;configuration values&rdquo;, and &ldquo;metadata UIDs&rdquo;.
+</em>
+ </figcaption>
+</figure>
+  </td>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em;">
+  <img src="microblock-iblock.png" alt="interaction microblock (iblock)" height="150px">
+ <figcaption style="padding-top: 1em;">
+<em>
+An interaction microblock, &ldquo;iblock&rdquo;, with &ldquo;ports&rdquo;, 
+&ldquo;configuration values&rdquo;, and &ldquo;metadata UIDs&rdquo;.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+<p>
+A cblock executes functions, but has
+<strong><a href="http://en.wikipedia.org/wiki/Side_effect_%28computer_science%29">no
+side effects</a></strong>, <em>except</em> (possibly) changing the state of an
+iblock. Each cblock, iblock or sblock can be a <strong>composition</strong>
+in itself (see Figure below), of cblocks, iblocks
+and/or sblocks. Some microblocks <em>must</em> have side effects because they
+serve as &ldquo;<a href="#bridges">bridges</a>&rdquo; to other semantic or
+execution domains. The composition allows, among other things:
+</p>
+<ul>
+<li>
+a <strong>cblock</strong> to contain also data (e.g., the computational
+state of an algorithm) and to trigger the execution of sub-functions.
+</li>
+<li>
+an <strong>iblock</strong> to provide also computations, such
+as the data management of
+<a href="http://en.wikipedia.org/wiki/FIFO">FIFO</a>, 
+<a href="http://en.wikipedia.org/wiki/Circular_buffer">circular</a>, or
+<a href="http://en.wikipedia.org/wiki/Read-copy-update">read-copy-update</a>
+buffers, or that of
+<a href="http://en.wikipedia.org/wiki/Software_transactional_memory">software
+transactional memory</a>.
+</li>
+<li>
+an <strong>sblock</strong> to provide also computations, such
+as the computation of a schedule on the basis of
+<a href="http://en.wikipedia.org/wiki/Rule_of_inference">rules</a>.
+</li>
+</ul>
+<p>
+Since each cblock can have multiple triggers and schedules, and since each
+iblock can have reads and writes through its various ports, and since each
+sblock can have multiple triggers, a (composite) microblock can have
+<strong>multiple entry and multiple exit points</strong>. For the same
+reasons, the <strong>execution schedule</strong> of the cblocks in the
+composite <em>can</em> change every time it is triggered.
+</p>
+
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="microblock-generic-composite.png" alt="A composite microblock" height="300px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+ A composite microblock, with multiple entry and multiple exit points.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+<p>
+The lines between the ports on cblocks and iblocks in the Figure above
+represent <strong>data relationships</strong> that allow
+<strong>to reason</strong> about the semantic conformance (of the models)
+of both connected blocks; so, these connections are static
+&ldquo;knowledge&rdquo;, and should <em>not</em> be interpreted as
+&ldquo;communications&rdquo; of any sort.
+The lines from one output trigger to (possibly) multiple input triggers
+represents a &ldquo;bus&rdquo;; despite the used terminology, this
+bus provides no communication, neither does it encode conformance
+constraints between the triggering sblock and the cblock it is triggering. 
+The meta model UID and configuration ports have not been connected by
+lines in the Figure, since their values can be read and written, in
+principle, by any other block, which would overload the graphical
+representation; of course, this reading and writing <em>does</em> require
+semantic checks at both &ldquo;ends&rdquo; of the (not drawn) connections.
+</p>
+
+<p>
+From the Figure above, it is apparent that iblocks and sblocks are,
+structurally speaking, <em>hyperedges</em> that connect two or more
+cblocks. And since each iblock, sblock or cblock can be a composite
+microblock in itself, the overall <strong>structural model</strong>
+of a <strong>composite microblock</strong> is that of a
+<strong>hierarchical hypergraph</strong> (see Figure below).
+</p>
+
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="microblock-generic-composite-hyperedge-dualities.png"
+      alt="A composite microblock showing the hyperedge dualities between iblocks and sblocks."
+      height="350px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+ A composite microblock  showing the hyperedge dualities between iblocks
+and sblocks, with the cblocks being the &ldquo;invariant points&rdquo; of
+the duality transformations.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+<p>
+The Figure above shows the <strong>duality</strong> between the sblock
+hyperedge and the iblock hyperedge: the former links trigger ports on
+multiple cblocks (at various levels of composition!), the latter links data
+ports on multiple cblocks. The cblocks are the 
+<a href="http://en.wikipedia.org/wiki/Invariant_point">invariant points</a>
+of the duality transformation: they can connect to all microblock types.
+Such dualities are not too useful for <em>users</em> of the models, but
+they help <em>developers</em> to reduce the complexity of the meta
+modelling, hence also of the software tooling with which they can assist
+their users: dualities reduce the number of rules in the meta model
+to roughly half, and hence also the amount of code to be written in
+the software tooling.
+</p>
+
+<p>
+Note that the Figure above has two scheduler blocks, and both can trigger some of
+the same cblocks. Whether or not this is a valid composition is not part of
+the <em>structural</em> part of the meta model, but of the
+<strong>(application-specific) policies</strong> (that is, the
+relationships and constraints between meta model primitives) that (have to
+be) added by each particular application to the <em>structural</em> and
+<em>behavioural</em> parts of the meta model. 
+</p>
+
+<h3><a name="composition">Composition</a></h3>
+<p>
+The composite microblock example implies the need for a fourth type of
+microblock (in addition to cblock, iblock and sblock), namely a
+<strong>Composer (block)</strong>. The Composer is 
+<strong>non-functional</strong> since it does not add any
+<em>computation behaviour</em> to the composition, and it has no data or
+trigger ports to connect to the other functional microblocks. But a
+Composer block does have meta data UID ports, and one or more iblocks to
+store the &ldquo;composition data&rdquo;. Indeed, inside its composite
+block, a Composer microblock serves as the 
+<a href="http://en.wikipedia.org/wiki/Metadata_registry">meta data registry</a>
+for all microblocks and their interconnections. This data can be stored in
+an iblock, but a Composer should also have its own cblocks and sblocks when
+it is responsible for the runtime creation of the
+<em>interconnection structure</em> of the
+&ldquo;functional&rdquo; cblocks, iblocks and sblocks. It also needs
+computational behaviour (hence cblocks, iblocks and sblocks, in general) to
+check the semantic conformance of the interconnected ports. That
+registry information can be used by a runtime
+<a href="http://en.wikipedia.org/wiki/Broker_Pattern">microblocks broker</a>,
+helping tools, visualisers, loggers, and other systems to all
+the information they need to interact with the current microblocks system.
+</p>
+
+
+<h3><a name="deployment">Activation &mdash; Deployment</a></h3>
+<p>
+A microblocks system is not executing by itself, but must be activated
+(&ldquo;<a href="http://en.wikipedia.org/wiki/Software_deployment">deployed</a>&rdquo;)
+on an execution platform (operating system, runtime,&hellip;), possibly
+with several others at the same time. The information in their (meta) models can be used by a
+<a href="http://en.wikipedia.org/wiki/Factory_%28object-oriented_programming%29">factory</a>
+activity in the deployed system, responsible for loading all the necessary
+code into the (operating) system's memory. Note that the <em>composer</em>
+itself is <em>not</em> a factory, since, as a microblock <em>model</em>, it
+should <em>have no side-effects</em>. Such side effects are definitely
+there during a deployment activity, since that has to connect to the
+operating system, or call CPU and memory operations on &ldquo;bare&rdquo;
+hardware.
+</p>
+
+
+
+<h3><a name="metamodel">Formal meta model</a></h3>
+<p>
+The previous paragraphs introduced all concepts in the meta model in a
+human-readable way; now it's time to turns these descriptions into formal
+representations. The <strong>structural part</strong> of the microblocks'
+<em>formal meta model</em> can be created as an <em>extension</em> to the
+<em>hierarchical hypergraph</em> (&ldquo;<em>HH</em>&rdquo;) meta model
+(currently in beta):
+</p>
+<ul>
+
+<li>
+<p>
+the HH <strong>node primitive</strong> gets 
+realisations for cblocks, iblocks, sblocks and Composer blocks, and for
+ports (data, configuration, meta data UIDs, and triggers).
+</p>
+</li>
+
+<li>
+<p>
+the HH <strong>edge primitive</strong>
+(&ldquo;<strong><code>connects</code></strong>&rdquo; relationship) gets
+six realisations :
+cblock&ndash;port,
+cblock&ndash;trigger,
+iblock&ndash;port,
+sblock&ndash;trigger,
+port&ndash;port, and
+trigger&ndash;trigger.
+</p>
+</li>
+
+<li>
+<p>
+the HH <strong><code>contains</code> relationship</strong> is used to represent
+<strong>hierarchical composition</strong>. 
+</p>
+</li>
+
+<li>
+<p>
+the <strong>policy</strong> is introduced that ports can connect
+microblocks <em>through</em> these hierarchical composition boundaries.
+</p>
+</li>
+
+<li>
+<p>
+each application domain introduces <strong>extra constraint policies</strong>
+on which <code>connnects</code> and <code>contains</code> compositions make
+sense in that domain.
+</p>
+</li>
+
+</ul>
+
+<p>
+The <strong>behavioural part</strong> has the following
+<strong>primitives</strong> and <strong>relationships</strong>:
+<strong>port data models</strong> connected to Ports,
+<strong>function models</strong> connected to cblocks,
+<strong>port data relationships</strong> connected to iblocks, and
+<strong>schedule sequence relationships</strong> connected to sblocks.
+All these are to be defined by the application domains.
+</p>
+
+
+<h3>Implementations</h3>
+<p>
+<strong><a href="https://github.com/kmarkus/microblx">microblx</a></strong>:
+Markus Klotzb&uuml;cher's project is currently the only (almost) full
+reference implementation of the <em>microblocks</em> meta model, using C
+and Lua. The development can be followed (and improved) via its
+<a href="http://lists.mech.kuleuven.be/mailman/admindb/microblx">mailing list</a>.
+<br/>
+<code>microblx</code> provides the core mechanism, and also already some
+<em>bridges</em> like a lock-free buffer, or a web interface that can
+display the structural mode of a microblocks system, change the
+configurations of microblocks, trigger them, etc.
+</p>
+<p>
+<strong><a href="http://orocos.org/rtt">Orocos/RTT</a></strong>: this
+framework contains most of the necessary <em>mechanism</em> (blocks
+(&ldquo;TaskContext&rdquo;) ports, triggers
+(&ldquo;<code>updateHook()</code>&rdquo;, and pseudo-semantic data models),
+but provides also a lot of <em>policies</em> that serve RTT's main target:
+OS-level containers for hard realtime <em>activities</em>.
+<br/>
+The <a href="http://rock-robotics.org">ROCK</a> toolkit adds a
+microblocks-conforming <em>composer</em> functionality, as well as the
+possibility to introduce <em>hierarchy</em> in the composition.
+</p>
+
+<p>
+<strong><a href="http://www.ros.org">ROS</a></strong> conforms to
+microblocks only to a very low extent: microblocks and ports, with a
+pseudo-semantic data model. It lacks all support for efficient scheduling,
+and for hierarchical composition.
+<p>
+All implementations should conform to the model explained above, but they
+can vary in the policies they offer. For example, one implementation might
+only support <em>lists</em> inside scheduler cblocks, while another one might
+<em>compute</em> the schedule from a set of rules and the current state of
+the system.
+</p>
+
+
+<h3><a name="bridges">Bridges and Proxies</a></h3>
+<p>
+The <strong>integration</strong> between a sub-system conforming to the
+microblocks model, and other sub-systems that don't, requires the
+introduction of &ldquo;bridges&rdquo;. (Or rather, this <em>is</em> the
+definition of a &ldquo;bridge&rdquo;.) Again, this document focuses on (the
+model of) the
+<em>mechanism</em>, and not on concrete behavioural policies. Hence, the
+presented (models of) &ldquo;bridge architectures&rdquo; are expected to be
+independent of the particular choices in communication middleware,
+networking hardware, operating system services, etc.
+</p>
+
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="microblocks-overlapping-knowledge-scopes.png"
+      alt="Microblock bridges and proxies."
+      height="350px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+A potential &ldquo;distributed robotic system architecture&rdquo; with
+microblock bridges and proxies. The &ldquo;port-less&rdquo; composite
+microblocks each represent different &ldquo;scopes&rdquo; of knowledge.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+<p>
+The inevitable trend in modern (robotics and other)
+<em>cyber-physical systems</em> is towards
+(i) <strong>high heterogeneity</strong> of sub-systems and sub-system
+providers, and (ii) <strong>high flexibility</strong> in how to connect the
+sub-systems together to realise the desired system-level behaviour. Hence,
+bridging between sub-systems is not just a matter of
+<em>communication of data</em> anymore, but also of (i) semantic checking
+and transformation, and even of
+(ii) <strong>context-aware adaptation</strong> of sub-system
+<em>behaviour</em>. The answer within the <em>microblocks</em> design
+paradigm is the concept of a <strong>proxy</strong> cblock: a proxy
+represents one
+sub-system in another one, in order (i) <em>to bridge</em> the communication gap,
+but (ii) also <em>to adapt</em> its &ldquo;embedded proxy
+<em>behaviour</em>&rdquo; to the host's context. That is, it adapts to the
+&ldquo;Quality of Service&rdquo; of the application-level interaction
+between host and proxy, and to the &ldquo;Quality of Service&rdquo; of the
+data interaction inside the bridges.
+</p>
+<p>
+Roughly speaking, bridges are <em>composite iblocks</em>, while proxies are
+<em>remotely represented cblocks</em>.
+So, proxies are all about <em>behaviour and policies</em>, but this
+section limits itself to the <em>structural</em> aspects of such
+<strong>&ldquo;bridge-and-proxy architectures&rdquo;</strong>.
+</p>
+<p>
+The Figure above sketches an example of a (potentially) distributed robotic system
+architecture using microblock bridges and proxies. The robot, sensor and
+GUI &ldquo;agents&rdquo; are connected to the world model agent, via
+bridges, which they use to perform their intended <em>data
+interaction</em>. 
+</p>
+<p>
+The medium-term ambition of the <em>microblocks</em> project is to provide
+models and reference implementations of various types of bridges to serve
+different use cases; proxies will have to be added by application
+developers, but later sections of this document already introduce some of
+the major categories of robotics application sub-systems that can make use
+of proxies (and bridges). First, here is a (non-exhaustive) list of
+complementary <em>types of bridges</em>:
+</p>
+<ul>
+
+<li>
+<p>
+<strong>data model bridge</strong>: even between two microblock components
+that work in the same thread and hence can share memory via iblocks, a
+bridge might be needed if one or more of the ports through which they want
+to interact have a different data model. For example, one is representing
+distance in kilometers, while the other one uses nautical miles.
+<em>If</em> both data models are semantically overlapping (as is the case
+in this example), the solution is as straigthforward as a
+<a href="http://en.wikipedia.org/wiki/Model_transformation">model-to-model
+transformation</a> to be realised in a composite iblock, that is, a bridge.
+</p>
+</li>
+
+<li>
+<p>
+<strong>programming language bridge</strong>: the problem above is almost
+inevitable if two different programming languages are being used, for
+example <em>C</em> and <em>C++</em>. One &ldquo;side&rdquo; of such a
+bridge should be completely conforming to the <em>microblock</em> model;
+else, it should not be called a &ldquo;bridge&rdquo;.
+</p>
+</li>
+
+<li>
+<p>
+<strong>threading bridge</strong>: when two microblock composites are
+activated in two 
+<a href="http://en.wikipedia.org/wiki/Thread_%28computing%29">threads</a>,
+traditional 
+<a href="http://en.wikipedia.org/wiki/Inter-process_communication">
+Inter-Process Communication</a> solutions are required. Both ends of such
+an IPC <em>could</em> have a <em>microblocks</em>-conforming interface, and
+even the whole bridge can be implemented with microblocks, <em>except</em>
+when 
+<a href="http://en.wikipedia.org/wiki/Locking_%28computer_science%29">locking</a>
+primitives are used because those introduce <em>side effects</em>.
+</p>
+<p>
+Possible designs of this bridge, as well as of the following ones, is documented
+in more detail in the
+<a href="http://en.wikipedia.org/wiki/Active_object">active object</a>
+pattern, as documented in, for example: Lavender, R. Greg; Schmidt, Douglas
+C., <a href="http://www.cs.wustl.edu/~schmidt/PDF/Act-Obj.pdf">Active Object</a>.
+Also the <a href="http://zguide.zeromq.org/page:all">&Oslash;MQ Guide</a>
+contains a lot of valuable suggestions.
+</p>
+</li>
+
+<li>
+<p>
+<strong>process bridge</strong>: both ends are activated in separate
+<a href="http://en.wikipedia.org/wiki/Process_%28computing%29">processes</a>
+on the same operating system, hence OS-level IPC is required.
+</p>
+</li>
+
+<li>
+<p>
+<strong>communication bridge</strong>: idem, but now requiring 
+<a href="http://en.wikipedia.org/wiki/Middleware">fieldbus middleware</a>
+in between.
+</p>
+</li>
+
+<li>
+<p>
+<strong>semantic bridge</strong>: this is, in general, the most complex
+one, because it can contain all of the above, <em>and</em> it also has to translate one
+end's semantics in the other end's semantics. Often, this translation
+implies a loss of semantics because both ends do not have exactly the same
+semantics. Examples of semantic bridges are:
+</p>
+<ul>
+<li>
+ transforming maps in similar but not identical 
+<a href="http://en.wikipedia.org/wiki/Geographic_information_system">GIS</a>
+standards, such as
+<a href="http://en.wikipedia.org/wiki/OpenStreetMap">OpenStreetMap</a> and
+<a href="https://en.wikipedia.org/wiki/Nokia_Maps">Here</a>.
+</li>
+<li>
+memory transformations on transmitted data.
+</li>
+</ul>
+</li>
+
+</ul>
+
+
+<h3><a name="subsystems">Sub-systems &mdash; Closures</a></h3>
+<p>
+The <a href="#bridges">previous section</a> added <em>policies</em> on top
+of the microblocks <em>mechanism</em> to provide template solutions to
+commonly occurring <strong>technical interoperability</strong> problems.
+The policies introduced in this section provide template solutions to
+commonly occurring <strong>sub-systems</strong>. These are just one more
+level of composition away from full-fledged <strong>applications</strong>.
+The difference between sub-systems and applications is that the extra
+composition of an application is used to solve the application-level
+optimizations, and <em>only those</em>.
+For example, a <em><a href="#motionstack">motion control stack</a></em> is
+a sub-system, because the exact behaviour of the controlled
+motion should be determined by the application that requires the motion.
+Similarly, a Bayesian probability network for 
+<em><a href="#perceptionnetwork">sensor fusion</a></em> is a sub-system,
+because the exact set of sensors, features, object properties and task
+requirements should be determined by the application that requires the
+perception data.
+</p>
+
+<p>
+The coloured &ldquo;borders&rdquo; around subsystems in the Figure above
+(i.c., the bridges and the world model) do not have ports (which provide a
+<strong>&ldquo;<a href="http://en.wikipedia.org/wiki/Closure_%28computer_programming%29">closure</a>&rdquo;
+for data and computations</strong>) but they do have a semantic meaning,
+namely the <strong>closure for knowledge</strong>: the context-specific
+information based on which the data and computations are configured. Unlike
+port-closures, <em>knowledge-closures can overlap</em>; they are typically
+also not visible in the runtime functional code, but only show up in the
+offline tooling and the runtime reasoning about how to compose and
+(re)configure a particular system.
+</p>
+
+<p>
+The subsections below each discuss one common
+&ldquo;template application&rdquo; of port-based systems, and show the
+mapping from their traditional &ldquo;syntax&rdquo; to their microblocks
+equivalent. Of course, the mapping is not <em>one-to-one</em> (hence not
+<em>reversible</em>), since the microblocks version allows a <em>richer
+semantics</em> with respect to data and triggering.
+</p>
+
+
+<h4><a name="controldiagrams">Control and data flow diagrams</a></h4>
+<p>
+Many algorithms in robotics are described, taught and implemented as data
+flow diagrams, with or without feedback. In the latter case, the data flow
+diagram is often also used a data pipeline or
+<a href="">DAG</a>.
+</p>
+
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="generic-control-diagram.png"
+      alt="Generic control diagram."
+      width="300px">
+<br/>
+<br/>
+ <img src="generic-control-diagram-microblocks.png"
+      alt="Generic control diagram in its microblocks model."
+      width="300px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+Generic control diagram (top) with its microblocks model (bottom).
+<br/>
+(The configuration and UID ports have been removed, to increase readability.)
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+<p>
+Modelling data flows with the microblocks meta model is rather
+straigthforward. Most application domains, however, do not add the
+<em>iblocks</em> as explicitly shared memory, and the <em>sblocks</em>
+as explicitly represented execution serialization.
+</p>
+
+
+<h4><a name="motionstack">Motion control stack</a></h4>
+<p>
+One of the major traditional applications of control diagrams is the
+so-called &ldquo;motion control stack&rdquo; of a robotic (or machine tool)
+system. It is a combination of hierarchically nested levels of control,
+where a deeper level deals with a physical phenomenom with a higher natural
+time constant. Again, the mainstream descriptions and implementations of
+motion control stacks make a lot of &ldquo;hidden assumptions&rdquo; about
+the execution serialization, and hide most of the &ldquo;computational
+state&rdquo; of the control stack.
+</p>
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="Cartesian-joint-actuator-drive-control-architecture.png"
+      alt="Generic motion control stack."
+      height="450px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+Generic motion control stack. Specific stacks &ldquo;only&rdquo; add
+context-specific policies, data model, and schedules. 
+<br/>
+(Note that, for reasons of pictorial simplicity, the figure does not
+conform 100% to the microblocks meta model.)
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+
+<h4><a name="perceptionnetwork">Bayesian networks</a></h4>
+<p>
+<a href="http://en.wikipedia.org/wiki/Bayesian_network">Bayesian networks</a> 
+are the most popular examples of more generic
+<a href="http://en.wikipedia.org/wiki/Graphical_model">probabilistic graphical models</a>
+that rely on
+<a href="">Bayes' rule</a>
+for the methodological computation of system dynamics under uncertainty.
+The Figure below shows the well-understood transformation from a network in
+a generic 
+<a href="http://en.wikipedia.org/wiki/Factor_graph">Factor Graph</a>
+form into a 
+<a href="">junction tree structure</a>
+to which an equally well-understood 
+<a href="">message passing</a>
+solution algorithm can be applied (see other Figure below).
+</p>
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="graphical-model-factor-graph-junction-tree.png"
+      alt="Transformations of a generic factor graph into a junction tree."
+      height="300px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+Successive transformations of a probabilistic network in generic Factor
+Graph form into a junction tree. 
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+
+<table style="width: 75%;">
+ <tr>
+  <td style="text-align: center; ">
+<figure style="border: thin solid; padding: .5em; ">
+ <img src="factor-graph-tree-message-passing.png"
+      alt="Message passing over a Factor Graph."
+      height="200px">
+ <figcaption style="display: block; text-align:center;  padding-top: 1em;">
+<em>
+Message passing over a tree.
+</em>
+ </figcaption>
+</figure>
+  </td>
+ </tr>
+</table>
+
+
+</body>
+</html>

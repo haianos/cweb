@@ -1,0 +1,374 @@
+<html>
+<title>Microblocks: Motivations &amp; Design drivers</title>
+<body>
+
+<h1>Microblocks: composable port-based computations</h1>
+<h2>&mdash; Motivations &amp; Design drivers &mdash; </h2>
+
+<hr>
+<table style="width: 100%;">
+<tr>
+ <td style="text-align: left;">
+<a href="http://people.mech.kuleuven.be/~bruyninc/">Herman Bruyninckx</a>, 
+University of Leuven, Belgium &amp; Eindhoven University of Technology, the
+Netherlands
+</td>
+<td style="text-align: right; width: 15em;">
+Last update: 20 May, 2014
+</td>
+</tr>
+<tr>
+ <td>
+Markus Klotzb&uuml;cher,
+<a href="http://www.kistler.com">Kistler</a>, Switzerland
+</br>
+Enea Scioni,
+<a href="http://endif.unife.it/it">Universit&agrave; Degli Studi di
+Ferrara</a>, Italy &amp;
+University of Leuven, Belgium
+</br>
+Johan Philips, University of Leuven, Belgium
+ </td>
+ <td>
+ </td>
+</tr>
+</table>
+<hr>
+
+<p>
+The <a href="http://microblx.org/">microblocks</a>
+project was created because of the gap in
+available software frameworks (&ldquo;open source&rdquo; or proprietary
+alike) with respect to <strong>&ldquo;infinite flexibility&rdquo;</strong>
+in making <strong>systems</strong> out of
+<strong>&ldquo;atomic&rdquo; blocks</strong> (much the same way as hardware
+systems are realised), while at the same time still allowing 
+<strong>maximally efficient, realtime execution</strong>.
+</p>
+<p>
+Available software frameworks have given up on one or more of these
+requirements, in order to provide &ldquo;ready-to-use&rdquo;
+functionalities to particular target groups of users in particular
+<em>application domains</em>.
+Offering code in such application- and user-centric way makes the users' lives
+<em>a lot</em> easier, obviously. But it results in limited reusability
+outside of the targeted application domain: optimizing for applications or
+users invariably introduces &ldquo;hidden assumptions&rdquo; in the code
+base that all targeted users in the application domain expect to be
+satisfied without them having to worry anymore. Successful examples of this
+approach are design software ecosystems like Simulink, LabView or 20Sim:
+their target users are control engineers, who want to turn system design
+<em>diagrams</em> (the &ldquo;meaning&rdquo;) into simulations or embedded
+<em>code</em> (the &ldquo;product&rdquo;), as fast as possible and with as
+few as possible &ldquo;obvious&rdquo; trade-off decisions to be made.
+Frequently occurring &ldquo;hidden assumptions&rdquo; in this context are: 
+</p>
+<ul>
+
+<li>
+<p>
+the code generated from the diagram is optimized by the tool for a selected
+hardware configuration, and only for that one, because the user will never
+want to change the generated code, to reuse it on other hardware, or to
+integrate it later with extra functionalities.
+</p>
+</li>
+
+<li>
+<p>
+variables in the code get semantically meaningless but
+<em>easy-to-automate</em> names, such as
+<pre>param0, param1, param2,&hellip;</pre>
+So, once the code is generated,
+it has become impossible <em>to reconstruct</em> the original
+&ldquo;user-centric&rdquo; application <em>model</em>, <em>to reason</em>
+about its meaning or intention, or <em>to transform</em> the code into
+other models, blocks or compositions that reuse part of the available
+functionality.
+</p>
+</li>
+
+</ul>
+<p>
+The conclusion might be that &ldquo;infinite flexibility&rdquo; is an utopian
+objective to strive for, <em>because</em> there are so very few users that
+really demand or expect it. However, the last decade was tremendously
+<em>game-changing</em>: it brought a drop in <em>prices of hardware</em>
+components (processors, I/O, memory, communication infrastructure,&hellip;,
+but also cameras, robots, distance sensors, etc.), together with a
+tremendous increase in <em>readily available software</em> frameworks to
+work with that hardware. The <em>combination</em> of both has stimulated a
+growing number of people to try to build systems of a complexity that
+surpasses what can fit in the heads of one single developer. That human
+constraint is a fundamental boundary, and reaching it is a unique milestone
+in the history of the human race. A consequence of crossing this boundary
+is that, for the first time in history,
+<em>application-dependent integrations</em> between different
+&ldquo;vendors&rdquo; has become a <em>must</em>. In other words, we will
+<em>require</em> software tooling that <em>understands</em> the meaning of
+all available bits and pieces, can <em>check</em> if they can be interconnected in a
+particular new application, and, if not, can suggest how they need to be
+<em>adapted</em> to fit together.
+</p>
+
+<p>
+In this context, it has become clear that novel software infrastructure has
+to be developed, which, necessarily, &ldquo;steps back&rdquo; a bit
+from the trend of the last 50 years towards more support for abstract, high
+level, <a href="#lessons">object-oriented</a> programming languages, to
+focus on smaller, semantically 100% clear, and &ldquo;atomic&rdquo;
+languages.
+<a href="http://www.microblx.org/">microblocks</a> is one of
+those, whose ambition towards such atomicity goes further than other
+similar initiatives, like <a href="http://clojure.org/">Clojure</a>,
+or <a href="https://git.openrobots.org/projects/genom3">Genom</a>.
+Because of the lower level of the software primitives, <em>tooling</em> is
+indispensable, even to make rather simple systems, but such tooling is
+required anyway because of the above-mentioned &ldquo;human mind boundary
+crossing&rdquo; challenge.
+</p>
+
+
+<h3> <a name="lessons">Lessons learned from the domination of object-oriented design</a></h3>
+<p>
+25+ years of <em>software engineering</em> for robots, machine tools, measurement devices,
+<a href="https://en.wikipedia.org/wiki/SCADA">SCADA</a> systems,&hellip;,
+led to the following <strong>lessons learned</strong>:
+</p>
+<ul>
+
+<li>
+<p>
+there is a <strong>huge variation</strong> in the functionalities required
+by those engineering systems (controllers, decision making algorithms, planners,
+monitors,&hellip;): which parts of the algorithms have to be executed in a
+particular context, which &ldquo;magic numbers&rdquo; fit best in that
+context, which interactions (communications, co-execution,
+transactions,&hellip;) have to be scheduled at a specific time, etc. The
+traditional approach to create object-oriented class libraries is to extend
+the class API for each variant, and this is a
+<strong>non-maintainable</strong> approach, because it results in many
+methods with only slightly different implementations.
+</p>
+</li>
+
+<li>
+<p>
+<strong>concurrency</strong> is almost always an afterthought, while it is
+an essential part of the real world that the so-called
+<a href="https://en.wikipedia.org/wiki/Cyber-physical_system">cyber-physical systems</a>
+are expected to control. This (implicit) over-emphasis on
+&ldquo;single threadedness&rdquo; has resulted in
+<strong>too much &ldquo;information hiding&rdquo;</strong> in software
+frameworks: the methods are available through class APIs, but most of the
+data is not, while it is exactly that data that must accessible for
+integration of sub-systems. <em>If</em> a solution to this problem is
+implemented, it typically requires <strong>multiple copies</strong> of the
+same data, which is not only a resource hog, but also makes 
+<strong> data consistency management</strong> impractical.
+</p>
+</li>
+
+<li>
+<p>
+<strong>multiple inheritance</strong> as &ldquo;supported&rdquo; in most
+object-oriented language obscures the semantic difference between
+<em>inheritance of behaviour</em> (that is, via <em>&ldquo;is-a&rdquo;</em> relations),
+and the <strong>composition of models</strong> (that is, via
+&ldquo;<a href="http://link.springer.com/article/10.1007%2Fs10270-005-0079-0">conforms-to</a>&rdquo;
+relations). The latter is indispensable for (reasoning on) semantic models
+of complex systems.
+</p>
+</li>
+
+<li>
+<p>
+too many software frameworks are <strong>single language</strong> (only C++, or
+Java, or C), and focus on <strong>compile-time</strong> support. But multi-vendor
+engineering systems will be built with many languages, and have
+<strong>to adapt</strong> themselves at <strong>runtime</strong>.
+</p>
+</li>
+
+<li>
+<p>
+too many software frameworks are <strong>designed for human developers
+only</strong> (who can't get rid of their habit to <em>do</em> look into
+each others' code although being trained not to&hellip;), while future
+systems will require the <strong>systems themselves</strong> to assemble,
+adapt and reconfigure themselves. This increases the need to give
+<strong>knowledge engineering</strong>, in addition to software
+engineering, and this is way too difficult to be solved with a compiler as
+the only tool.
+</p>
+</li>
+
+<li>
+<p>
+too many software frameworks have been created with only one <strong>single
+problem domain</strong> in mind: computer vision, motion control, process
+control, data mining, learning, action planning, etc., and have,
+unwillingly and implicitly, introduced many <strong>&ldquo;too early
+optimizations&rdquo;</strong> for that domain. This complicates
+<strong>code reuse</strong> in system-level application development, since
+such systems require different combinations of functionalities and
+different application-level optimizations.
+</p>
+</li>
+
+</ul>
+
+
+<h3><a name="drivers">Design drivers</a></h3>
+<p>
+The <a href="http://www.microblx.org">microblocks</a> project turned these &ldquo;lessons
+learned&rdquo; into four <strong>design drivers</strong>: the
+<strong>separation</strong> in all software of
+(i) <strong>structure and behaviour</strong>,
+(ii) <strong><a href="http://clojure.org/state">identity and state</a></strong>,
+and 
+(iii) <strong><a href="https://en.wikipedia.org/wiki/Separation_of_mechanism_and_policy">mechanism
+and policy</a></strong>;
+and the <strong>composition</strong>
+via <strong><a href="https://en.wikipedia.org/wiki/Semantic_Web">semantic
+models</a> and <a href="https://en.wikipedia.org/wiki/Meta_model">meta-models</a></strong>
+of all software (and knowledge!) &ldquo;atoms&rdquo;.
+</p>
+<p>
+These generic drivers are translated in more concrete design guidelines and
+focus points:
+</p>
+
+<ul>
+
+<li>
+<p>
+<strong>real time</strong> efficiency <em>does</em> matter. This can only
+be achieved by having &ldquo;atomic&rdquo; building <strong>blocks</strong>
+providing the <strong>&ldquo;mechanism&rdquo;</strong> to encode,
+separately, <strong>pure code</strong> (&ldquo;computational block&rdquo;)
+and <strong>pure data</strong> (&ldquo;data block&rdquo;).
+</p> </li>
+
+<li>
+<p>
+<strong>code</strong> is the container of <strong>activity</strong>: it is
+the code that makes &ldquo;things change&rdquo;. And
+<strong>data</strong> is the container of <strong>interaction</strong>:
+different activities influence each other by the data they exchange.
+<strong>Together</strong>, they realise <strong>interactivity</strong>,
+and, in general, this is a <strong>bi-directional process</strong>.
+</p>
+</li>
+
+<li>
+<p>
+<strong>ports instead of APIs</strong>:
+the consistent use of 
+<a href="http://en.wikipedia.org/wiki/Port_%28computer_networking%29">ports</a>
+facilitates to realise the <strong>explicit separability</strong> of data
+in memory (instead of possibly overlapping
+domains of C pointers); easier to support data-management <em>policies</em>
+such as
+<a href="http://en.wikipedia.org/wiki/Software_transactional_memory">software transactional
+memory</a>, <a href="">immutable data</a>, or locks (mutex, condition
+variable, semaphore,&hellip;) and <em>lock-free buffers</em>
+(lock free, wait free, obstruction free, progress allowing,&hellip;), side effect-free
+behaviour, the fact that data exchange between components is only an
+&ldquo;advise&rdquo; or &ldquo;snapshot&rdquo; and not a
+&ldquo;contract&rdquo;,&hellip;
+</p>
+</li>
+
+<li>
+<p>
+<strong>extension by composition, not by inheritance</strong>. In
+traditional OO design, adding functionality is done via
+<a href="http://en.wikipedia.org/wiki/Inheritance_%28object-oriented_programming%29">inheritance</a>
+(of interfaces or implementations) but for algorithms with a lot of
+<em>variability</em>, this can lead to a lot of code duplication and hence poorly
+maintainable libraries. 
+<a href="http://en.wikipedia.org/wiki/Composition_over_inheritance">Composition</a>
+can offer a viable alternative, but mostly so when done via the use of
+&ldquo;ports&rdquo; and &ldquo;blocks&rdquo;, not via 
+<a href="http://en.wikipedia.org/wiki/API">APIs</a>
+or
+<a href="http://en.wikipedia.org/wiki/Component-based_software_engineering">components</a>.
+</p>
+</li>
+
+<li>
+<p>
+<strong>application-aware tooling</strong> must be created on top of the
+above-mentioned atomic mechanism, to reduce the resulting
+complexity of building big systems out of such small bricks. In this
+context, lessons can be learned from the models and tools used to design
+<a href="https://en.wikipedia.org/wiki/Fpga">FPGA</a> devices.
+</p>
+</li>
+
+<li>
+<p>
+efforts to create <strong>system composition methodologies</strong> must be
+intensified: designing systems becomes less of an art and more of an
+engineering discipline, by (i) providing all
+functionalities in the <strong>strongly separated</strong> forms mentioned
+above, and (ii) families of <strong>architectural patterns</strong> that
+show how to <strong>couple</strong> such decoupled sub-systems, via consistent
+<a href="http://en.wikipedia.org/wiki/Dependency_injection">dependency
+injection</a>. The most important awareness for creating architectural
+patterns is that every <strong>structural composition</strong> conforms to
+the meta model of a <strong>hierarchical hypergraph</strong>:
+<ul>
+<li>
+the <strong>composition</strong> of atomic blocks behaves like an atomic block again. More
+concretely: a &ldquo;data block&rdquo; or a &ldquo;computational
+block&rdquo;.
+</li>
+<li>
+the <strong>interaction</strong> between blocks always has the topology of
+an hyperedge. Traditional graphs limit out thinking by implicitly
+suggesting directed edges between only two nodes, while real systems
+interact with a lot higher complexity.
+</li>
+</ul>
+</p>
+</li>
+
+<li>
+<p>
+The architectural patterns are kept fully application independent, and
+must be complemented with <strong>domain-specific policies</strong> that best
+satisfy the <strong>application-specific trade-offs</strong> at the
+<strong>system</strong> level.
+</p>
+</li>
+
+<li>
+<p>
+<strong>concurrency</strong> and <strong>distribution</strong> should be
+taken into account from the start, and although they look similar at first,
+they really are two different things: one can need concurrency even in one
+single thread, and, conversely, many sub-systems can be distributed without
+problems because they have no functional or resource interactions.
+</p>
+</li>
+
+<li>
+<p>
+<strong>semantic modelling</strong> becomes mandatory so that:
+(i) (<em>variants</em> of) code can be
+<strong>generated or configured from models</strong> instead of manually
+created, (ii) <strong>(sub)systems should identify themselves</strong> with
+a complete model of their architecture and behaviour, and
+(iii) <em>domain standards and
+<a href="https://en.wikipedia.org/wiki/Ontology_%28information_science%29">ontologies</a></em>
+should emerge in different application domains and become <em>first-class
+citizens</em> in any software development in those domains.
+</p>
+</li>
+
+</ul>
+
+</body>
+</html>
