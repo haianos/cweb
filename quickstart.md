@@ -106,5 +106,4 @@ The output port is also connected to *i_block* fifo1, a buffer with an output po
 What's next ?
 -------------
 
-- [Tutorials](../Tutorials/)
-- [Documentation](../Documentation/)
+Now that you scratch the surface of Microblx framework, you would like to mastering it by following our [Tutorials](../Tutorials/) or get more insights by reading some [Documentation](../Documentation/).
